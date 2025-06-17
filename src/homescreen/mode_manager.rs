@@ -1,4 +1,4 @@
-use crate::homescreen::{Counter,Message};
+use crate::homescreen::{Message,NoteEditors};
 
 use iced::keyboard::{Key, Modifiers, key::Named};
 use iced::Task;
@@ -27,7 +27,7 @@ impl ModeManager {
         ModeManager{ active_mode: Mode::Command }
     }
 
-    fn handle_cmd_keypress(&self, k: Key, screen: &mut Counter) -> StateTransition {
+    fn handle_cmd_keypress(&self, k: Key, screen: &mut NoteEditors) -> StateTransition {
         let c = if let Key::Character(c) = k {
             c.to_string()
         } else {
@@ -70,7 +70,7 @@ impl ModeManager {
         }
     }
 
-    fn handle_selectedit_keypress(&self, k: Key, screen: &Counter) -> StateTransition {
+    fn handle_selectedit_keypress(&self, k: Key, screen: &NoteEditors) -> StateTransition {
         let fallback_to_cmd_mode = StateTransition {
             next_mode: Mode::Command,
             transition_task: Task::none(),
@@ -92,7 +92,7 @@ impl ModeManager {
         }
     }
 
-    fn handle_selectexit_keypress(&self, k: Key, screen: &Counter) -> StateTransition {
+    fn handle_selectexit_keypress(&self, k: Key, screen: &NoteEditors) -> StateTransition {
         let fallback_to_cmd_mode = StateTransition {
             next_mode: Mode::Command,
             transition_task: Task::none(),
@@ -111,7 +111,7 @@ impl ModeManager {
         }
     }
 
-    fn handle_edit_keypress(&self, k: Key, modifier: Modifiers, screen: &Counter) -> StateTransition {
+    fn handle_edit_keypress(&self, k: Key, modifier: Modifiers, screen: &NoteEditors) -> StateTransition {
         let no_transition = StateTransition {
             next_mode: self.active_mode,
             transition_task: Task::none(),
@@ -136,7 +136,7 @@ impl ModeManager {
         return no_transition;
     }
 
-    pub fn handle_keypress(&mut self, k: Key, m: Modifiers, screen: &mut Counter) -> Task<Message> {
+    pub fn handle_keypress(&mut self, k: Key, m: Modifiers, editors: &mut NoteEditors) -> Task<Message> {
         let transition = match k {
             Key::Named(nk) => {
                 let next_mode = if nk == Named::Escape {
@@ -150,10 +150,10 @@ impl ModeManager {
                 }
             }
             Key::Character(_) => match self.active_mode {
-                Mode::Command => self.handle_cmd_keypress(k, screen),
-                Mode::SelectEdit => self.handle_selectedit_keypress(k, screen),
-                Mode::SelectExit => self.handle_selectexit_keypress(k, screen),
-                Mode::Edit => self.handle_edit_keypress(k, m, screen),
+                Mode::Command => self.handle_cmd_keypress(k, editors),
+                Mode::SelectEdit => self.handle_selectedit_keypress(k, editors),
+                Mode::SelectExit => self.handle_selectexit_keypress(k, editors),
+                Mode::Edit => self.handle_edit_keypress(k, m, editors),
                 Mode::Exit => StateTransition {
                     next_mode: self.active_mode,
                     transition_task: Task::none(),
