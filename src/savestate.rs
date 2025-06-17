@@ -18,7 +18,9 @@ impl fmt::Display for SavestateError {
         match self {
             SavestateError::Io(err) => write!(f, "IO Error: {}", err),
             SavestateError::NoParent => write!(f, "Parent dir does not exist"),
-            SavestateError::FailedSerialization(err) => write!(f, "Failed to serialize to json {}", err),
+            SavestateError::FailedSerialization(err) => {
+                write!(f, "Failed to serialize to json {}", err)
+            }
         }
     }
 }
@@ -51,7 +53,8 @@ impl Savefile {
     }
 
     pub fn write_to_json(&self, p: impl AsRef<Path>) -> Result<(), SavestateError> {
-        let json_notes = serde_json::to_string_pretty(&self).map_err(SavestateError::FailedSerialization)?;
+        let json_notes =
+            serde_json::to_string_pretty(&self).map_err(SavestateError::FailedSerialization)?;
 
         let Some(parent) = p.as_ref().parent() else {
             return Err(SavestateError::NoParent);

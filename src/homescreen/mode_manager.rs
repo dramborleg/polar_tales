@@ -1,7 +1,7 @@
-use crate::homescreen::{Message,NoteEditors};
+use crate::homescreen::{Message, NoteEditors};
 
-use iced::keyboard::{Key, Modifiers, key::Named};
 use iced::Task;
+use iced::keyboard::{Key, Modifiers, key::Named};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum Mode {
@@ -24,7 +24,9 @@ struct StateTransition {
 
 impl ModeManager {
     pub fn new() -> ModeManager {
-        ModeManager{ active_mode: Mode::Command }
+        ModeManager {
+            active_mode: Mode::Command,
+        }
     }
 
     fn handle_cmd_keypress(&self, k: Key, screen: &mut NoteEditors) -> StateTransition {
@@ -111,7 +113,12 @@ impl ModeManager {
         }
     }
 
-    fn handle_edit_keypress(&self, k: Key, modifier: Modifiers, screen: &NoteEditors) -> StateTransition {
+    fn handle_edit_keypress(
+        &self,
+        k: Key,
+        modifier: Modifiers,
+        screen: &NoteEditors,
+    ) -> StateTransition {
         let no_transition = StateTransition {
             next_mode: self.active_mode,
             transition_task: Task::none(),
@@ -136,7 +143,12 @@ impl ModeManager {
         return no_transition;
     }
 
-    pub fn handle_keypress(&mut self, k: Key, m: Modifiers, editors: &mut NoteEditors) -> Task<Message> {
+    pub fn handle_keypress(
+        &mut self,
+        k: Key,
+        m: Modifiers,
+        editors: &mut NoteEditors,
+    ) -> Task<Message> {
         let transition = match k {
             Key::Named(nk) => {
                 let next_mode = if nk == Named::Escape {

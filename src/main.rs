@@ -1,7 +1,7 @@
 mod homescreen;
 mod savestate;
 
-use crate::homescreen::{Homescreen,Message};
+use crate::homescreen::{Homescreen, Message};
 
 fn main() -> iced::Result {
     iced::application("polar tales", Homescreen::update, Homescreen::view)

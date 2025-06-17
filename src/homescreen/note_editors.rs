@@ -24,11 +24,9 @@ impl NoteEditors {
         };
 
         let log_entries = match &state_file {
-            Some(f) => {
-                match Savefile::read_from_json(f) {
-                    Some(s) => s.log_entries,
-                    None => Vec::new(),
-                }
+            Some(f) => match Savefile::read_from_json(f) {
+                Some(s) => s.log_entries,
+                None => Vec::new(),
             },
             None => Vec::new(),
         };
@@ -61,7 +59,11 @@ impl NoteEditors {
         }
     }
 
-    pub fn perform_editor_action(&mut self, action: text_editor::Action, target_id: text_editor::Id) {
+    pub fn perform_editor_action(
+        &mut self,
+        action: text_editor::Action,
+        target_id: text_editor::Id,
+    ) {
         match self.entries.iter_mut().find(|(id, _)| id == &target_id) {
             Some((_, content)) => content.perform(action),
             None => {}
@@ -96,7 +98,7 @@ impl NoteEditors {
                 Err(e) => {
                     println!("{e}");
                     println!("{state:?}");
-                },
+                }
                 _ => (),
             };
         } else {
