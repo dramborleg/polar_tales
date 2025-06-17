@@ -18,11 +18,7 @@ pub struct NoteEditors {
 
 impl NoteEditors {
     pub fn new() -> NoteEditors {
-        let state_file = match state_dir() {
-            Some(sd) => Some(sd.join("polartales/state.json")),
-            None => None,
-        };
-
+        let state_file = state_dir().map(|sd| sd.join("polartales/state.json"));
         let log_entries = match &state_file {
             Some(f) => match Savefile::read_from_json(f) {
                 Some(s) => s.log_entries,
@@ -34,7 +30,7 @@ impl NoteEditors {
         let entries = log_entries
             .iter()
             .map(|e| {
-                let mut e = text_editor::Content::with_text(&e);
+                let mut e = text_editor::Content::with_text(e);
                 e.perform(text_editor::Action::Move(text_editor::Motion::DocumentEnd));
                 e
             })
@@ -53,10 +49,9 @@ impl NoteEditors {
     }
 
     pub fn focus_entry(&self, entry_idx: usize) -> Option<Task<Message>> {
-        match self.entries.get(entry_idx) {
-            Some((id, _)) => Some(text_editor::focus(id.clone())),
-            None => None,
-        }
+        self.entries
+            .get(entry_idx)
+            .map(|(id, _)| text_editor::focus(id.clone()))
     }
 
     pub fn perform_editor_action(
@@ -64,10 +59,9 @@ impl NoteEditors {
         action: text_editor::Action,
         target_id: text_editor::Id,
     ) {
-        match self.entries.iter_mut().find(|(id, _)| id == &target_id) {
-            Some((_, content)) => content.perform(action),
-            None => {}
-        };
+        if let Some((_, content)) = self.entries.iter_mut().find(|(id, _)| id == &target_id) {
+            content.perform(action)
+        }
     }
 
     pub fn display_editors(&self) -> Column<Message> {
@@ -94,12 +88,9 @@ impl NoteEditors {
             log_entries: all_notes,
         };
         if let Some(state_file) = &self.state_file {
-            match state.write_to_json(state_file) {
-                Err(e) => {
-                    println!("{e}");
-                    println!("{state:?}");
-                }
-                _ => (),
+            if let Err(e) = state.write_to_json(state_file) {
+                println!("{e}");
+                println!("{state:?}");
             };
         } else {
             println!("{state:?}");

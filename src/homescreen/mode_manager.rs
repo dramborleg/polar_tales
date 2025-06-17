@@ -103,7 +103,7 @@ impl ModeManager {
             return fallback_to_cmd_mode;
         };
 
-        let Ok(idx) = c.parse::<usize>() else {
+        let Ok(_idx) = c.parse::<usize>() else {
             return fallback_to_cmd_mode;
         };
 
@@ -140,7 +140,7 @@ impl ModeManager {
             };
         }
 
-        return no_transition;
+        no_transition
     }
 
     pub fn handle_keypress(

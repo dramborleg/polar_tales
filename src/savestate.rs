@@ -46,10 +46,7 @@ impl Savefile {
             return None;
         };
 
-        match serde_json::from_str::<Savefile>(&text) {
-            Ok(state) => Some(state),
-            Err(_) => None,
-        }
+        serde_json::from_str::<Savefile>(&text).ok()
     }
 
     pub fn write_to_json(&self, p: impl AsRef<Path>) -> Result<(), SavestateError> {
