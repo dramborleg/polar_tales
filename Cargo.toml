@@ -1,0 +1,12 @@
+[package]
+name = "polartales"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# iced = "0.13.1"
+# https://github.com/iced-rs/iced/pull/2653
+iced = { git = "https://github.com/sgued/iced.git", rev = "8061abd2f0f9b670e3cfd99cee312a452cf1ce77" }
+dirs = "6.0.0"
+serde_json = "1.0.140"
+serde = "1.0.219"
