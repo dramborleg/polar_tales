@@ -1,10 +1,10 @@
 mod homescreen;
 mod savestate;
 
-use crate::homescreen::{Counter,Message};
+use crate::homescreen::{Homescreen,Message};
 
 fn main() -> iced::Result {
-    iced::application("polar tales", Counter::update, Counter::view)
+    iced::application("polar tales", Homescreen::update, Homescreen::view)
         // on_key_press might make more sense, but TextEditor widgets eat many
         // of the inputs instead of passing them through, whereas on_key_release
         // is a bit more generous with the events that get passed through. This

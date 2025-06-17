@@ -16,21 +16,21 @@ pub enum Message {
 }
 
 #[derive(Debug)]
-pub struct Counter {
+pub struct Homescreen {
     editors: NoteEditors,
     mode_mgr: ModeManager,
 }
 
-impl Default for Counter {
+impl Default for Homescreen {
     fn default() -> Self {
-        Counter {
+        Homescreen {
             mode_mgr: ModeManager::new(),
             editors: NoteEditors::new(),
         }
     }
 }
 
-impl Counter {
+impl Homescreen {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Keypress(k, m) => self.mode_mgr.handle_keypress(k, m, &mut self.editors),
