@@ -8,12 +8,13 @@ use iced::clipboard;
 use iced::widget::{Column, text_editor};
 use iced::window;
 
+use indexmap::IndexMap;
 use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct NoteEditors {
     state_file: Option<PathBuf>,
-    entries: Vec<(text_editor::Id, text_editor::Content)>,
+    entries: IndexMap<text_editor::Id, text_editor::Content>,
 }
 
 impl NoteEditors {
@@ -44,13 +45,13 @@ impl NoteEditors {
 
     pub fn add_note(&mut self) -> Task<Message> {
         let id = text_editor::Id::unique();
-        self.entries.push((id.clone(), text_editor::Content::new()));
+        self.entries.insert(id.clone(), text_editor::Content::new());
         text_editor::focus(id)
     }
 
     pub fn focus_entry(&self, entry_idx: usize) -> Option<Task<Message>> {
         self.entries
-            .get(entry_idx)
+            .get_index(entry_idx)
             .map(|(id, _)| text_editor::focus(id.clone()))
     }
 
@@ -59,7 +60,7 @@ impl NoteEditors {
         action: text_editor::Action,
         target_id: text_editor::Id,
     ) {
-        if let Some((_, content)) = self.entries.iter_mut().find(|(id, _)| id == &target_id) {
+        if let Some(content) = self.entries.get_mut(&target_id) {
             content.perform(action)
         }
     }
