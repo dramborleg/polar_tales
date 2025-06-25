@@ -36,8 +36,15 @@ impl error::Error for SavestateError {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct SavefileLogEntry {
+    pub notes: String,
+    pub minutes_spent: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Savefile {
-    pub log_entries: Vec<String>,
+    pub log_entries: Vec<SavefileLogEntry>,
+    pub unix_time_last_exit: u64,
 }
 
 impl Savefile {

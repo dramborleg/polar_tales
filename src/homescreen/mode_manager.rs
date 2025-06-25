@@ -72,7 +72,7 @@ impl ModeManager {
         }
     }
 
-    fn handle_selectedit_keypress(&self, k: Key, screen: &NoteEditors) -> StateTransition {
+    fn handle_selectedit_keypress(&self, k: Key, screen: &mut NoteEditors) -> StateTransition {
         let fallback_to_cmd_mode = StateTransition {
             next_mode: Mode::Command,
             transition_task: Task::none(),

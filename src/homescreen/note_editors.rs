@@ -1,5 +1,5 @@
 use crate::homescreen::Message;
-use crate::savestate::Savefile;
+use crate::savestate::{Savefile, SavefileLogEntry};
 
 use dirs::state_dir;
 
@@ -9,50 +9,75 @@ use iced::widget::{Column, text_editor};
 use iced::window;
 
 use indexmap::IndexMap;
+
 use std::path::PathBuf;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+const SEC_PER_MIN: u64 = 60;
 
 #[derive(Debug)]
 pub struct NoteEditors {
     state_file: Option<PathBuf>,
-    entries: IndexMap<text_editor::Id, text_editor::Content>,
+    entries: IndexMap<text_editor::Id, (text_editor::Content, Duration)>,
+    last_focused_id: Option<text_editor::Id>,
+    last_app_exit: SystemTime,
 }
 
 impl NoteEditors {
     pub fn new() -> NoteEditors {
         let state_file = state_dir().map(|sd| sd.join("polartales/state.json"));
-        let log_entries = match &state_file {
-            Some(f) => match Savefile::read_from_json(f) {
-                Some(s) => s.log_entries,
-                None => Vec::new(),
-            },
-            None => Vec::new(),
+        let empty_savestate = Savefile {
+            log_entries: Vec::new(),
+            unix_time_last_exit: SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or(Duration::ZERO)
+                .as_secs(),
+        };
+        let savestate = if let Some(state_file) = &state_file {
+            Savefile::read_from_json(state_file).unwrap_or(empty_savestate)
+        } else {
+            empty_savestate
         };
 
-        let entries = log_entries
+        let entries = savestate
+            .log_entries
             .iter()
-            .map(|e| {
-                let mut e = text_editor::Content::with_text(e);
-                e.perform(text_editor::Action::Move(text_editor::Motion::DocumentEnd));
-                e
+            .map(|entry| {
+                let mut content = text_editor::Content::with_text(&entry.notes);
+                content.perform(text_editor::Action::Move(text_editor::Motion::DocumentEnd));
+                let time_spent = Duration::from_secs(entry.minutes_spent * SEC_PER_MIN);
+                (content, time_spent)
             })
-            .map(|e| (text_editor::Id::unique(), e))
+            .map(|entry| (text_editor::Id::unique(), entry))
             .collect();
+
+        let last_app_exit = UNIX_EPOCH + Duration::from_secs(savestate.unix_time_last_exit);
+
         NoteEditors {
             state_file,
             entries,
+            last_focused_id: None,
+            last_app_exit,
         }
+    }
+
+    fn set_focus(&mut self, id: text_editor::Id) -> Task<Message> {
+        self.last_focused_id = Some(id.clone());
+        text_editor::focus(id)
     }
 
     pub fn add_note(&mut self) -> Task<Message> {
         let id = text_editor::Id::unique();
-        self.entries.insert(id.clone(), text_editor::Content::new());
-        text_editor::focus(id)
+        self.entries
+            .insert(id.clone(), (text_editor::Content::new(), Duration::ZERO));
+        self.set_focus(id)
     }
 
-    pub fn focus_entry(&self, entry_idx: usize) -> Option<Task<Message>> {
-        self.entries
-            .get_index(entry_idx)
-            .map(|(id, _)| text_editor::focus(id.clone()))
+    pub fn focus_entry(&mut self, entry_idx: usize) -> Option<Task<Message>> {
+        if let Some((id, _)) = self.entries.get_index(entry_idx) {
+            return Some(self.set_focus(id.clone()));
+        }
+        None
     }
 
     pub fn perform_editor_action(
@@ -60,33 +85,56 @@ impl NoteEditors {
         action: text_editor::Action,
         target_id: text_editor::Id,
     ) {
-        if let Some(content) = self.entries.get_mut(&target_id) {
+        if let Some((content, _)) = self.entries.get_mut(&target_id) {
             content.perform(action)
         }
     }
 
     pub fn display_editors(&self) -> Column<Message> {
-        let mut entries = Column::new();
-        for (id, content) in &self.entries {
-            entries = entries.push(
+        let mut editors = Column::new();
+        for (id, (content, _)) in &self.entries {
+            editors = editors.push(
                 text_editor(content)
                     .placeholder("notes")
                     .id(id.clone())
                     .on_action(move |a| Message::EditorActivate(a, id.clone())),
             );
         }
-        entries
+        editors
     }
 
     pub fn save_and_exit(&self) -> Task<Message> {
-        let all_notes: Vec<String> = self
+        let cur_task_interval = SystemTime::now()
+            .duration_since(self.last_app_exit)
+            .unwrap_or(Duration::ZERO);
+
+        let log_entries: Vec<SavefileLogEntry> = self
             .entries
             .iter()
-            .map(|(_, content)| content.text())
+            .map(|(id, (content, time_spent))| {
+                let additional_time_spent = if let Some(last_focused_id) = &self.last_focused_id {
+                    if id == last_focused_id {
+                        cur_task_interval
+                    } else {
+                        Duration::ZERO
+                    }
+                } else {
+                    Duration::ZERO
+                };
+                let minutes_spent = (*time_spent + additional_time_spent).as_secs() / SEC_PER_MIN;
+                SavefileLogEntry {
+                    notes: content.text(),
+                    minutes_spent,
+                }
+            })
             .collect();
-        let text_notes = all_notes.join("\n");
+        let unix_time_last_exit = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or(Duration::ZERO)
+            .as_secs();
         let state = Savefile {
-            log_entries: all_notes,
+            log_entries,
+            unix_time_last_exit,
         };
         if let Some(state_file) = &self.state_file {
             if let Err(e) = state.write_to_json(state_file) {
@@ -96,11 +144,18 @@ impl NoteEditors {
         } else {
             println!("{state:?}");
         };
+
+        let clipboard_notes = state
+            .log_entries
+            .iter()
+            .map(|entry| entry.minutes_spent.to_string() + "m: " + &entry.notes)
+            .collect::<Vec<String>>()
+            .join("\n");
         // iced::exit() is tempting to return without closing the window first,
         // but this results in a segfault in iced on some platforms, so closing
         // the window first is cleaner, at least for now.
         // https://github.com/iced-rs/iced/issues/2983
-        clipboard::write(text_notes).chain(
+        clipboard::write(clipboard_notes).chain(
             window::get_latest()
                 .and_then(window::close)
                 .chain(iced::exit()),
