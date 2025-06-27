@@ -40,3 +40,9 @@ edit mode commands:
 
 - `ctrl-s` - save and exit
 - `ctrl-c` - copy all the note entries to the clipboard, then save and exit
+
+## Screenshots
+
+Eventually it would be nice to add some visual differentiation for each mode and perhaps make the entry selection easier as well, for now it is just a basic interface:
+
+![Screenshot of the main screen in command mode.](/screenshots/command_mode.png)
