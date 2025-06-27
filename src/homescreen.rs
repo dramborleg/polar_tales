@@ -9,6 +9,10 @@ use iced::Task;
 use iced::keyboard::{Key, Modifiers};
 use iced::widget::text_editor;
 
+use std::time::{Duration, SystemTime};
+
+const INIT_DELAY_TIME: Duration = Duration::from_secs(1);
+
 #[derive(Debug, Clone)]
 pub enum Message {
     Keypress(Key, Modifiers),
@@ -19,6 +23,7 @@ pub enum Message {
 pub struct Homescreen {
     editors: NoteEditors,
     mode_mgr: ModeManager,
+    time_at_init: SystemTime,
 }
 
 impl Default for Homescreen {
@@ -26,12 +31,20 @@ impl Default for Homescreen {
         Homescreen {
             mode_mgr: ModeManager::new(),
             editors: NoteEditors::new(),
+            time_at_init: SystemTime::now(),
         }
     }
 }
 
 impl Homescreen {
     pub fn update(&mut self, message: Message) -> Task<Message> {
+        let time_since_init = SystemTime::now()
+            .duration_since(self.time_at_init)
+            .unwrap_or(INIT_DELAY_TIME);
+        if time_since_init < INIT_DELAY_TIME {
+            return Task::none();
+        }
+
         match message {
             Message::Keypress(k, m) => self.mode_mgr.handle_keypress(k, m, &mut self.editors),
             Message::EditorActivate(action, target_id) => {
