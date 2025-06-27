@@ -103,7 +103,7 @@ impl NoteEditors {
         editors
     }
 
-    pub fn save_and_exit(&self) -> Task<Message> {
+    pub fn save_and_exit(&self, write_clipboard: bool) -> Task<Message> {
         let cur_task_interval = SystemTime::now()
             .duration_since(self.last_app_exit)
             .unwrap_or(Duration::ZERO);
@@ -145,20 +145,24 @@ impl NoteEditors {
             println!("{state:?}");
         };
 
+        // iced::exit() is tempting to return without closing the window first,
+        // but this results in a segfault in iced on some platforms, so closing
+        // the window first is cleaner, at least for now.
+        // https://github.com/iced-rs/iced/issues/2983
+        let exit_task = window::get_latest()
+            .and_then(window::close)
+            .chain(iced::exit());
+
+        if !write_clipboard {
+            return exit_task;
+        }
+
         let clipboard_notes = state
             .log_entries
             .iter()
             .map(|entry| entry.minutes_spent.to_string() + "m: " + &entry.notes)
             .collect::<Vec<String>>()
             .join("\n");
-        // iced::exit() is tempting to return without closing the window first,
-        // but this results in a segfault in iced on some platforms, so closing
-        // the window first is cleaner, at least for now.
-        // https://github.com/iced-rs/iced/issues/2983
-        clipboard::write(clipboard_notes).chain(
-            window::get_latest()
-                .and_then(window::close)
-                .chain(iced::exit()),
-        )
+        clipboard::write(clipboard_notes).chain(exit_task)
     }
 }

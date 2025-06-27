@@ -14,18 +14,27 @@ The periodic interval launch is not implemented within polar tales (yet?) so thi
 
 ```sh
 #!/bin/bash
-rm ~/.local/state/polartales/state.json # clear yesterday's notes
+
+# clear yesterday's notes
+rm ~/.local/state/polartales/state.json # or $XDG_STATE_HOME if it is defined
 while true; do
   sleep 1200
   polartales
 done
 ```
 
-There is a command mode and an edit mode, and the application is primarily keyboard driven. `Esc` can be pressed at any time to return to command mode, and in edit mode, `ctrl-s` saves and exits. Note that while using the mouse to select a notes entry will allow it to be edited, selecting in this manner does *not* (yet) put the application into edit mode. There are a few actions in command mode:
+The application is primarily keyboard driven and has a command mode (the default mode) and an edit mode. Note that while using the mouse to select a note entry will allow it to be edited, selecting in this manner does *not* (yet) put the application into edit mode so it may exhibit erratic behavior.
+
+`Esc` can be pressed at any time to return to command mode.
+
+command mode commands:
 
 - `n` - create a new note entry
 - `e<0-9>` - edit an existing note, eg `e0` to edit the first note
-- `s<0-9>` - select an existing note to add the time estimate duration to, and immediately exit
-- `x` - immediately exit
+- `s<0-9>` - select an existing note to add the time estimate duration to, then save and exit
+- `x` - save and exit
 
-polar tales attempts to save its state to disk between runs (not yet tested on windows/mac). It also unconditionally copies the contents to the clipboard before exiting, so be careful if this is undesirable (it may eventually be configurable).
+edit mode commands:
+
+- `ctrl-s` - save and exit
+- `ctrl-c` - copy all the note entries to the clipboard, then save and exit

@@ -61,9 +61,10 @@ impl ModeManager {
             };
         }
         if c == "x" {
+            let write_clipboard = false;
             return StateTransition {
                 next_mode: Mode::Exit,
-                transition_task: screen.save_and_exit(),
+                transition_task: screen.save_and_exit(write_clipboard),
             };
         }
         StateTransition {
@@ -107,10 +108,11 @@ impl ModeManager {
             return fallback_to_cmd_mode;
         };
 
+        let write_clipboard = false;
         match screen.focus_entry(idx) {
             Some(task) => StateTransition {
                 next_mode: Mode::Exit,
-                transition_task: task.chain(screen.save_and_exit()),
+                transition_task: task.chain(screen.save_and_exit(write_clipboard)),
             },
             None => fallback_to_cmd_mode,
         }
@@ -136,10 +138,11 @@ impl ModeManager {
             return no_transition;
         };
 
-        if c == "s" {
+        if c == "s" || c == "c" {
+            let write_clipboard = c == "c";
             return StateTransition {
                 next_mode: Mode::Exit,
-                transition_task: screen.save_and_exit(),
+                transition_task: screen.save_and_exit(write_clipboard),
             };
         }
 
