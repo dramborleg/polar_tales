@@ -94,7 +94,7 @@ impl ModeManager {
         }
     }
 
-    fn handle_selectexit_keypress(&self, k: Key, screen: &NoteEditors) -> StateTransition {
+    fn handle_selectexit_keypress(&self, k: Key, screen: &mut NoteEditors) -> StateTransition {
         let fallback_to_cmd_mode = StateTransition {
             next_mode: Mode::Command,
             transition_task: Task::none(),
@@ -103,13 +103,16 @@ impl ModeManager {
             return fallback_to_cmd_mode;
         };
 
-        let Ok(_idx) = c.parse::<usize>() else {
+        let Ok(idx) = c.parse::<usize>() else {
             return fallback_to_cmd_mode;
         };
 
-        StateTransition {
-            next_mode: Mode::Exit,
-            transition_task: screen.save_and_exit(),
+        match screen.focus_entry(idx) {
+            Some(task) => StateTransition {
+                next_mode: Mode::Exit,
+                transition_task: task.chain(screen.save_and_exit()),
+            },
+            None => fallback_to_cmd_mode,
         }
     }
 
