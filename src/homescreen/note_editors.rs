@@ -162,7 +162,7 @@ impl NoteEditors {
             .iter()
             .map(|entry| entry.minutes_spent.to_string() + "m: " + &entry.notes)
             .collect::<Vec<String>>()
-            .join("\n");
+            .join("\n\n");
         clipboard::write(clipboard_notes).chain(exit_task)
     }
 }
