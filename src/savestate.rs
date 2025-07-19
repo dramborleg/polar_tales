@@ -45,6 +45,7 @@ pub struct SavefileLogEntry {
 pub struct Savefile {
     pub log_entries: Vec<SavefileLogEntry>,
     pub unix_time_last_exit: u64,
+    pub last_focused_idx: Option<u64>,
 }
 
 impl Savefile {

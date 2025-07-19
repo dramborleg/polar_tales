@@ -62,9 +62,15 @@ impl ModeManager {
         }
         if c == "x" {
             let write_clipboard = false;
-            return StateTransition {
-                next_mode: Mode::Exit,
-                transition_task: screen.save_and_exit(write_clipboard),
+            return match screen.focus_mru_entry() {
+                Some(task) => StateTransition {
+                    next_mode: Mode::Exit,
+                    transition_task: task.chain(screen.save_and_exit(write_clipboard)),
+                },
+                None => StateTransition {
+                    next_mode: Mode::Exit,
+                    transition_task: screen.save_and_exit(write_clipboard),
+                },
             };
         }
         StateTransition {

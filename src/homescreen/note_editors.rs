@@ -32,6 +32,7 @@ impl NoteEditors {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap_or(Duration::ZERO)
                 .as_secs(),
+            last_focused_idx: None,
         };
         let savestate = if let Some(state_file) = &state_file {
             Savefile::read_from_json(state_file).unwrap_or(empty_savestate)
@@ -39,7 +40,7 @@ impl NoteEditors {
             empty_savestate
         };
 
-        let entries = savestate
+        let entries: IndexMap<text_editor::Id, (text_editor::Content, Duration)> = savestate
             .log_entries
             .iter()
             .map(|entry| {
@@ -53,10 +54,17 @@ impl NoteEditors {
 
         let last_app_exit = UNIX_EPOCH + Duration::from_secs(savestate.unix_time_last_exit);
 
+        let last_focused_id: Option<text_editor::Id> = if let Some(idx) = savestate.last_focused_idx
+        {
+            entries.get_index(idx as usize).map(|(k, _)| k.clone())
+        } else {
+            None
+        };
+
         NoteEditors {
             state_file,
             entries,
-            last_focused_id: None,
+            last_focused_id,
             last_app_exit,
         }
     }
@@ -75,6 +83,13 @@ impl NoteEditors {
 
     pub fn focus_entry(&mut self, entry_idx: usize) -> Option<Task<Message>> {
         if let Some((id, _)) = self.entries.get_index(entry_idx) {
+            return Some(self.set_focus(id.clone()));
+        }
+        None
+    }
+
+    pub fn focus_mru_entry(&mut self) -> Option<Task<Message>> {
+        if let Some(id) = &self.last_focused_id {
             return Some(self.set_focus(id.clone()));
         }
         None
@@ -132,9 +147,15 @@ impl NoteEditors {
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap_or(Duration::ZERO)
             .as_secs();
+        let last_focused_idx = if let Some(id) = &self.last_focused_id {
+            self.entries.get_index_of(id).map(|idx| idx as u64)
+        } else {
+            None
+        };
         let state = Savefile {
             log_entries,
             unix_time_last_exit,
+            last_focused_idx,
         };
         if let Some(state_file) = &self.state_file {
             if let Err(e) = state.write_to_json(state_file) {
