@@ -14,10 +14,12 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const SEC_PER_MIN: u64 = 60;
+const APP_DIR: &str = "polartales";
+const STATEFILE: &str = "state.json";
 
 #[derive(Debug)]
 pub struct NoteEditors {
-    state_file: Option<PathBuf>,
+    state_file: PathBuf,
     entries: IndexMap<text_editor::Id, (text_editor::Content, Duration)>,
     last_focused_id: Option<text_editor::Id>,
     last_app_exit: SystemTime,
@@ -25,7 +27,11 @@ pub struct NoteEditors {
 
 impl NoteEditors {
     pub fn new() -> NoteEditors {
-        let state_file = state_dir().map(|sd| sd.join("polartales/state.json"));
+        let appdir_filename = PathBuf::from_iter([APP_DIR, STATEFILE]);
+        let state_file = state_dir()
+            .map(|sd| sd.join(&appdir_filename))
+            .unwrap_or(appdir_filename);
+
         let empty_savestate = Savefile {
             log_entries: Vec::new(),
             unix_time_last_exit: SystemTime::now()
@@ -34,11 +40,7 @@ impl NoteEditors {
                 .as_secs(),
             last_focused_idx: None,
         };
-        let savestate = if let Some(state_file) = &state_file {
-            Savefile::read_from_json(state_file).unwrap_or(empty_savestate)
-        } else {
-            empty_savestate
-        };
+        let savestate = Savefile::read_from_json(&state_file).unwrap_or(empty_savestate);
 
         let entries: IndexMap<text_editor::Id, (text_editor::Content, Duration)> = savestate
             .log_entries
@@ -157,12 +159,8 @@ impl NoteEditors {
             unix_time_last_exit,
             last_focused_idx,
         };
-        if let Some(state_file) = &self.state_file {
-            if let Err(e) = state.write_to_json(state_file) {
-                println!("{e}");
-                println!("{state:?}");
-            };
-        } else {
+        if let Err(e) = state.write_to_json(&self.state_file) {
+            println!("{e}");
             println!("{state:?}");
         };
 
