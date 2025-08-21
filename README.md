@@ -34,7 +34,8 @@ command mode commands:
 - `n` - create a new note entry
 - `e<0-9>` - edit an existing note, eg `e0` to edit the first note
 - `s<0-9>` - select an existing note to add the time estimate duration to, then save and exit
-- `x` - save and exit; time estimate is added to the same task as last time polar tales was run
+- `x` - save and exit; time estimate is added to the last edited task; if no task was edited in this polar tales instance, it is added to the last edited task from the previous instance of polar tales
+- `ctrl-c` - copy all note entries to the clipboard, then save and exit; time estimate is added to the last edited task
 
 edit mode commands:
 

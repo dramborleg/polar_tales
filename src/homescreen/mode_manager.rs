@@ -29,7 +29,12 @@ impl ModeManager {
         }
     }
 
-    fn handle_cmd_keypress(&self, k: Key, screen: &mut NoteEditors) -> StateTransition {
+    fn handle_cmd_keypress(
+        &self,
+        k: Key,
+        modifier: Modifiers,
+        screen: &mut NoteEditors,
+    ) -> StateTransition {
         let c = if let Key::Character(c) = k {
             c.to_string()
         } else {
@@ -71,6 +76,13 @@ impl ModeManager {
                     next_mode: Mode::Exit,
                     transition_task: screen.save_and_exit(write_clipboard),
                 },
+            };
+        }
+        if modifier.control() && c == "c" {
+            let write_clipboard = true;
+            return StateTransition {
+                next_mode: Mode::Exit,
+                transition_task: screen.save_and_exit(write_clipboard),
             };
         }
         StateTransition {
@@ -174,7 +186,7 @@ impl ModeManager {
                 }
             }
             Key::Character(_) => match self.active_mode {
-                Mode::Command => self.handle_cmd_keypress(k, editors),
+                Mode::Command => self.handle_cmd_keypress(k, m, editors),
                 Mode::SelectEdit => self.handle_selectedit_keypress(k, editors),
                 Mode::SelectExit => self.handle_selectexit_keypress(k, editors),
                 Mode::Edit => self.handle_edit_keypress(k, m, editors),
